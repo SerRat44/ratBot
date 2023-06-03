@@ -177,28 +177,7 @@ function initializeWallet() {
 }
 // end of wallet connect
 
-const checkWalletButton = document.getElementById('check-wallet');
 
-checkWalletButton.addEventListener('click', async () => {
-  if (!activeWallet) {
-    alert('Please connect your wallet first.');
-    return;
-  }
-
-  try {
-    const address = await activeWallet.getAccounts();
-    console.log('Address:', address);
-
-    const balance = await activeWallet.getBalance();
-    console.log('Balance:', balance);
-
-    const inscriptions = await activeWallet.getInscriptions(0, 10);
-    console.log('Number of Inscriptions:', inscriptions.total);
-
-  } catch (e) {
-    console.log(e);
-  }
-});
 
 
 initializeWallet();
