@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Ordinals Bot</title>
+<style>
+  body { font-family: monospace; display: flex; flex-direction: column; align-items: center; margin: 4px; overflow-y: auto; background-color: #f2f2f2; }
+
+  button { margin: 4px; white-space: nowrap; }
+  button:not([disabled]):hover { background-color: #ddd; cursor: pointer; }
+  button:disabled { cursor: not-allowed; }
+</style>
+</head>
+<body>
+<h1>Token Information Fetcher</h1>
+
+<div>
+    <label for="collectionSymbol">Collection Symbol:</label>
+    <input type="text" id="collectionSymbol" name="collectionSymbol" required>
+</div>
+
+<div>
+    <label for="price">Price in BTC:</label>
+    <input type="text" id="price" name="price" required>
+</div>
+
+<button onclick="fetchTokenInformation()">Fetch Tokens</button>
+
+<script>
+  const fetchTokenInformation = () => {
+    const collectionSymbol = document.getElementById('collectionSymbol').value;
+    const priceInBTC = document.getElementById('price').value;
+
+    // Convert BTC to sats
+    const priceInSats = Math.floor(priceInBTC * 100000000);
+    const url = `https://api-mainnet.magiceden.io/v2/ord/btc/tokens?limit=20&offset=0&sortBy=priceAsc&minPrice=0&maxPrice=${priceInSats}&collectionSymbol=${collectionSymbol}&disablePendingTransactions=true`;
+
+    fetch(url)
+      .then(response => response.json())
+      .then(data => {
+        console.log(data);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+      });
+  }
+</script>
+</body>
+</html>
