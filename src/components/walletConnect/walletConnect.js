@@ -7,7 +7,6 @@ function initializeWallet() {
 	const connectButton = document.getElementById('connect-wallet');
     const selectMenu = document.getElementById('select-menu');
     const unisatButton = document.getElementById('unisat-wallet');
-	const xverseButton = document.getElementById('xverse-wallet');
     const optionsMenu = document.getElementById('options-menu');
     const disconnectButton = document.getElementById('disconnect-wallet');
 	
@@ -66,10 +65,6 @@ function initializeWallet() {
   
   unisatButton.addEventListener("click", () => {
 	connectWallet("unisat");
-	});
-	
-	xverseButton.addEventListener("click", () => {
-	connectWallet("xverse");
 	});
   
   disconnectButton.addEventListener("click", disconnectWallet);
