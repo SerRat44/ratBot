@@ -1,0 +1,42 @@
+	#connect-wallet {
+		position: fixed;
+		top: 10px;
+		right: 10px;
+		padding: 10px;
+		background-color: #fff;
+		border: none;
+		font-size: 16px;
+		cursor: pointer;
+		}
+	.wallet-menu {
+		display: none;
+		position: fixed;
+		top: 50%;
+		left: 50%;
+		transform: translate(-50%, -50%);
+		padding: 20px;
+		background-color: #fff;
+		border: 1px solid #ccc;
+		box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+		z-index: 1;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		}
+    .wallet-menu h2 {
+		margin-top: 0;
+		}
+    .wallet-menu button {
+		margin: 8px;
+		padding: 10px;
+		font-size: 16px;
+		text-align: center;
+		white-space: nowrap;
+		}
+	.wallet-menu button:not([disabled]):hover {
+		background-color: #ddd;
+		cursor: pointer;
+		}
+	.wallet-menu button:disabled {
+		cursor: not-allowed;
+		}
