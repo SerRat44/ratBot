@@ -1,6 +1,6 @@
 import wallets from './wallets.js';
 
-let activeWallet;
+window.activeWallet = null;
 
 function initializeWallet() {
   
@@ -34,7 +34,7 @@ function initializeWallet() {
 	
 	const disconnectWallet = async () => {
     try {	  
-	activeWallet = null;
+	window.activeWallet = null;
       resetConnectButton();
       optionsMenu.style.display = "none";
       console.log("disconnect successful");
@@ -45,8 +45,8 @@ function initializeWallet() {
 	
 	const connectWallet = async (walletKey) => {
     try {
-      activeWallet = wallets[walletKey];
-      const accounts = await activeWallet.connect();
+      window.activeWallet = wallets[walletKey];
+      const accounts = await window.activeWallet.connect();
       connectButton.textContent = `${accounts[0].substr(0, 8)}...`;
       selectMenu.style.display = "none";
 	  console.log("connect successful");
