@@ -1,4 +1,12 @@
 import * as bitcoinMessage from 'bitcoinjs-message';
+import * as bitcoin from "bitcoinjs-lib";
+import { bech32m } from 'bech32';
+import CryptoJS from 'crypto-js';
+import BN from 'bn.js';
+
+import * as ecc from 'tiny-secp256k1';
+
+bitcoin.initEccLib(ecc);
 
   let connectedWallet;
   let walletCheckInterval;
@@ -61,17 +69,114 @@ const signatureVerification = (message, address, signature) => {
   return isValid;
 }
 
+async function verifyTaprootSignature(message, address, signature) {
+  try {
+    // Step 1: Decode the address to obtain the public key
+    const decodedAddress = bech32m.decode(address);
+    const publicKey = bech32m.fromWords(decodedAddress.words);
+
+    // Step 2: Calculate the message hash
+    const messageHash = bitcoin.crypto.sha256(Buffer.from(message));
+
+    // Step 3: Verify the signature
+    const signatureBuffer = Buffer.from(signature, 'hex');
+    const signatureObj = bitcoin.script.signature.decode(signatureBuffer);
+    const hashType = signatureObj.hashType;
+    const signatureDER = signatureObj.signature;
+
+    const publicKeyPair = bitcoin.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'));
+    const signatureRS = bitcoin.script.signature.decodeDER(signatureDER);
+    const signatureECDSA = {
+      signature: signatureRS.signature,
+      hashType: hashType,
+    };
+
+    const result = await bitcoin.script.signature.verify(
+      messageHash,
+      signatureECDSA.signature,
+      publicKeyPair.publicKey,
+    );
+
+    return result;
+  } catch (error) {
+    console.error('Error during signature verification:', error);
+    return false;
+  }
+}
+
+function schnorrVerify(msg, signature, pubKey) {
+    // Calculate the hash of the message
+    const msgHash = CryptoJS.SHA256(msg).toString(CryptoJS.enc.Hex);
+
+    // Convert the signature to a Buffer
+    const signatureBuffer = Buffer.from(signature, 'base64');
+
+    // Split the signature into r and s
+    const r = signatureBuffer.slice(0, 32);
+    const s = signatureBuffer.slice(32, 64);
+
+    // Convert the public key to a Buffer
+    const publicKeyBuffer = Buffer.from(pubKey, 'hex');
+
+    // Calculate e = H(r || pubKey || m)
+    const e = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(r.toString('hex') + publicKeyBuffer.toString('hex') + msgHash)).toString(CryptoJS.enc.Hex);
+
+    // Calculate R = sG + eP
+    const sG = secp256k1.ec.g.mul(new BN(s.toString('hex'), 16)); // Convert s to big number
+    const eP = ec.keyFromPublic(publicKeyBuffer.toString('hex'), 'hex').pub.mul(new BN(e, 16)); // Convert e to big number
+    const R = sG.add(eP);
+
+    // Verify the x coordinate of R equals r
+    return R.getX().toString(16) === r.toString('hex');
+}
+
+function verifyBip322MessageSimple({ message, address, signature, network }) {
+  const { sha256 } = bitcoin.crypto;
+  const tag = 'BIP0322-signed-message';
+  const tagHash = sha256(Buffer.from(tag));
+  const messageHash = sha256(Buffer.concat([tagHash, tagHash, Buffer.from(message)]));
+
+  const outputScript = bitcoin.address.toOutputScript(address, network);
+
+  const tx = bitcoin.Transaction.fromHex(signature, network);
+  const input = tx.ins[0];
+  const witness = input.witness;
+
+  const scriptSig = Buffer.concat([Buffer.from('0020', 'hex'), messageHash]);
+  const txToVerify = new bitcoin.Transaction();
+  txToVerify.version = 0;
+  txToVerify.addInput(input.hash, input.index, input.sequence, scriptSig);
+  txToVerify.addOutput(outputScript, 0);
+
+  const hash = txToVerify.getHash();
+
+  return tx.hash === hash;
+}
+
 document.getElementById('authorize-button').addEventListener('click', async () => {
   const randomMsg = Math.random().toString(36).substring(2);
   try {
-    const signature = await activeWallet.signMessage(randomMsg);
+    const signature = await activeWallet.signMessage(randomMsg, "bip322-simple");
+	const pubKey = await window.activeWallet.getPublicKey();
 	
+	console.log("pubKey", pubKey)
 	console.log("randomMsg: ", randomMsg);
     console.log("connectedWallet: ", connectedWallet);
     console.log("signature: ", signature);
-
+	
+	//let hash = bitcoin.crypto.sha256(message);
+	//let keyPairFromPublic = bitcoin.ECPair.fromPublicKey(Buffer.from(publicKey, 'hex'));
+	
+	
     if (signature) {
-      const isValid = signatureVerification(randomMsg, connectedWallet, signature);
+
+// Call the function
+	const isValid = verifyBip322MessageSimple({
+  message: randomMsg,
+  address: connectedWallet,
+  signature: signature,
+  network: bitcoin.networks.bitcoin // or bitcoin.networks.testnet
+});
       console.log("isValid: ", isValid);
       if (isValid) {
         document.getElementById('authorization-section').style.display = 'none';
@@ -110,3 +215,6 @@ startWalletCheckInterval();
         console.error('Error:', error);
       });
   }
+  
+  const array = new Uint8Array(16);
+  console.log(window.crypto.getRandomValues(array));
